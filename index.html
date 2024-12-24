@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Beam Analysis Plot</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <form>
+        <table>
+            <tr>
+                <td>Condition</td>
+                <td>
+                    <select name="condition" id="condition">
+                        <option value="simply-supported">Simply Supported</option>
+                        <option value="two-span-unequal">Two Span Unequal</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>Load Force (w)</td>
+                <td><input type="text" id="w" value=""> kN/m</td>
+            </tr>
+            <tr>
+                <td>Primary Span (L1)</td>
+                <td><input type="text" id="primarySpan" value=""> m</td>
+            </tr>
+            <tr>
+                <td>Secondary Span (L2)</td>
+                <td><input type="text" id="secondarySpan" value=""> m</td>
+            </tr>
+            <tr>
+                <td colspan="2"><hr></td>
+            </tr>
+            <tr>
+                <td>j2</td>
+                <td><input type="text" id="j2" value=""></td>
+            </tr>
+            <tr>
+                <td>Bending Stiffness (EI)</td>
+                <td><input type="text" id="EI" value="3150000000000"> Nmm²</td>
+            </tr>
+            <tr>
+                <td colspan="2"><hr></td>
+            </tr>
+            <tr>
+                <td colspan="2" style="text-align: center;">
+                    <button type="button" id="calculate">Calculate</button>
+                </td>
+            </tr>
+        </table>
+    </form>
+
+    <h3>Shear Force Diagram</h3>
+    <canvas id="shear_force_plot" width="800" height="400"></canvas>
+    <h3>Bending Moment Diagram</h3>
+    <canvas id="bending_moment_plot" width="800" height="400"></canvas>
+    <h3>Deflection Diagram</h3>
+    <canvas id="deflection_plot" width="800" height="400"></canvas>
+
+    <script src="js/beam-analysis.js"></script>
+    <script src="js/analysis-plotter.js"></script>
+    <script>
+        function floatVal(id) {
+            return parseFloat(document.getElementById(id).value);
+        }
+
+        function stringVal(id) {
+            return document.getElementById(id).value;
+        }
+        document.getElementById('calculate').addEventListener('click', function () {
+        const beam = new Beam();
+        beam.primarySpan = floatVal('primarySpan');
+        beam.secondarySpan = floatVal('secondarySpan');
+        beam.material = new Material('No Name', { EI: floatVal('EI') });
+
+        const w = floatVal('w'); 
+        const condition = stringVal('condition');
+
+        const beamAnalysis = new BeamAnalysis();
+        const plotter = {
+            bendingMoment: new AnalysisPlotter('bending_moment_plot'),
+            deflection: new AnalysisPlotter('deflection_plot'),
+            shearForce: new AnalysisPlotter('shear_force_plot'),
+           
+        };
+
+    try {
+        const analyzer = beamAnalysis.analyzer[condition];
+
+        if (!analyzer) {
+            throw new Error('Invalid condition. Please select a valid beam condition.');
+        }
+
+        // const { M1, R1, R2, R3 } = analyzer.calculateReactions(beam, w);
+        // console.log("Reactions:", { M1, R1, R2, R3 });
+
+        
+        const bendingMomentData = beamAnalysis.getBendingMoment(beam, w, condition);
+        const deflectionData = beamAnalysis.getDeflection(beam, w, condition);
+        const shearForceData = beamAnalysis.getShearForce(beam, w, condition);
+
+       
+        let bendingMomentXValues = [];
+        let deflectionXValues = [];
+        let shearForceXValues = [];
+
+        if (condition === 'simply-supported') {
+            shearForceXValues = [0, 0.8, 1.6, 2.4, 3.2, 4, 4.8, 5.6, 6.4, 7.2, 8];
+            bendingMomentXValues = shearForceXValues;
+            deflectionXValues = shearForceXValues;
+        } else if (condition === 'two-span-unequal') {
+            shearForceXValues = [0, 0.9, 1.8, 2.7, 3.6, 4, 4, 4.9, 5.8, 6.7, 7.6, 8.5, 9];
+            bendingMomentXValues = [0, 0.9, 1.344, 1.8, 2.7, 3.6, 4, 4.9, 5.8, 6.7, 7.025, 7.6, 8.5, 9];
+            deflectionXValues = [0, 0.9, 1.34375, 1.8, 2.7, 3.6, 4, 4.9, 5.8, 6.7, 7.025, 7.6, 8.5, 9, 0, 0, 0 ];
+
+        } else {
+            throw new Error('Unsupported condition selected.');
+        }
+
+
+        plotter.shearForce.plot(shearForceData, 'Shear Force Diagram', shearForceXValues, 'Shear Force (kN)');
+        plotter.bendingMoment.plot(bendingMomentData, 'Bending Moment Diagram', bendingMomentXValues, 'Bending Moment (kNm)');
+        plotter.deflection.plot(deflectionData, 'Deflection Diagram', deflectionXValues, 'Deflection (mm)');
+
+
+        console.log('Shear Force Data:', shearForceData);
+        console.log('X Values:', shearForceXValues);
+        console.log('Bending Moment Data:', bendingMomentData);
+        console.log('Bending Moment X Values:', bendingMomentXValues);
+        console.log('Deflection Data:', deflectionData);
+        console.log('Deflection X Values:', deflectionXValues);
+
+        bendingMomentXValues.forEach((x) => {
+            try {
+                const result = bendingMomentData.equation(x);
+                console.log(`Bending Moment at x=${x}:`, result);
+            } catch (error) {
+                console.error(`Error calculating bending moment at x=${x}:`, error.message);
+            }
+        });
+
+        deflectionXValues.forEach((x) => {
+            try {
+                const result = deflectionData.equation(x);
+                console.log(`Deflection at x=${x}:`, result);
+            } catch (error) {
+                console.error(`Error calculating deflection at x=${x}:`, error.message);
+            }
+        });
+
+    } catch (error) {
+        console.error('Error: ', error.message);
+        alert('Something went wrong: ' + error.message);
+    }
+});
+
+    </script>
+</body>
+</html>
