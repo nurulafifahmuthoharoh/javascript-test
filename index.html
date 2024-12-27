@@ -107,13 +107,15 @@
         let shearForceXValues = [];
 
         if (condition === 'simply-supported') {
-            shearForceXValues = [0, 0.8, 1.6, 2.4, 3.2, 4, 4.8, 5.6, 6.4, 7.2, 8];
+            const span = beam.primarySpan; 
+            shearForceXValues = Array.from({ length: span * 100 + 1 }, (_, i) => i / 100); 
             bendingMomentXValues = shearForceXValues;
             deflectionXValues = shearForceXValues;
         } else if (condition === 'two-span-unequal') {
-            shearForceXValues = [0, 0.9, 1.8, 2.7, 3.6, 4, 4, 4.9, 5.8, 6.7, 7.6, 8.5, 9];
-            bendingMomentXValues = [0, 0.9, 1.344, 1.8, 2.7, 3.6, 4, 4.9, 5.8, 6.7, 7.025, 7.6, 8.5, 9];
-            deflectionXValues = [0, 0.9, 1.34375, 1.8, 2.7, 3.6, 4, 4.9, 5.8, 6.7, 7.025, 7.6, 8.5, 9, 0, 0, 0 ];
+            const span = beam.primarySpan + beam.secondarySpan;
+            shearForceXValues = Array.from({ length: span * 100 + 1 }, (_, i) => i / 100); 
+            bendingMomentXValues = shearForceXValues;
+            deflectionXValues = shearForceXValues;
 
         } else {
             throw new Error('Unsupported condition selected.');
