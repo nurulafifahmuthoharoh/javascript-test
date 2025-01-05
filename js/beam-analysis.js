@@ -197,48 +197,44 @@ BeamAnalysis.analyzer.twoSpanUnequal = class {
         };
     }
     
-    getDeflectionEquation(beam, load) {
-        const L1 = beam.primarySpan;
-        const L2 = beam.secondarySpan;
-        const totalLength = L1 + L2;
-        const EI = beam.material.properties.EI / Math.pow(1000, 3); 
-        const j2 = parseFloat(document.getElementById('j2').value); 
+   getDeflectionEquation(beam, load) {
+        return function(x) {
 
-        const M1 = -(load * Math.pow(L2, 3) + load * Math.pow(L1, 3)) / (8 * totalLength);
-        const R1 = M1 / L1 + (load * L1) / 2;
-        const R3 = M1 / L2 + (load * L2) / 2;
-        const R2 = load * totalLength - R1 - R3;
-      
-        return function (x) {
-            let deflection = 0;
+            const j2 = parseFloat(document.getElementById('j2').value); 
+    
+            const L1 = beam.primarySpan; 
+            const L2 = beam.secondarySpan; 
           
-            if (x >= 0 && x <= L1) {
+            const w = load; 
+        
+            const EI = beam.material.properties.EI / 1e7;
           
-              deflection = (
-                (x / (24 * EI)) *
-                (4 * R1 * Math.pow(x, 2) -
-                  load * Math.pow(x, 3) +
-                  load * Math.pow(L1, 3) -
-                  4 * R1 * Math.pow(L1, 2))
-              ) * (1000 * j2);
-            } else if (x > L1 && x <= totalLength) {
-
-              deflection = (
-                (
-                  (R1 * x / 6) * (Math.pow(x, 2) - Math.pow(L1, 2)) +
-                  (R2 * x / 6) * (Math.pow(x, 2) - 3 * L1 * x + 3 * Math.pow(L1, 2)) -
-                  (R2 * Math.pow(L1, 3)) / 6 -
-                  (load * x / 24) * (Math.pow(x, 3) - Math.pow(L1, 3))
-                ) *
-                (1 / (EI / Math.pow(1000, 3))) *
-                (1000 * j2)
-              );
+            const R1 = (w * L1 * (3 * L2 + 2 * L1)) / (2 * (L1 + L2));
+            const R2 = w * (L1 + L2) - R1;
+    
+            let delta;
+    
+            if (L1 === L2) {
+                if (x <= L1) {
+            
+                    delta = ((w * x ** 2) / (24 * EI)) * (6 * L1 ** 2 - 4 * L1 * x + x ** 2) - (R1 * x ** 3) / (6 * EI);
+                } else if (x <= L1 + L2) {
+                    const x2 = x - L1; 
+                    delta = (w * L1 ** 3) / (6 * EI) - (R1 * L1 ** 2) / (2 * EI) + (R2 * x2 ** 3) / (6 * EI) - (w * x2 ** 4) / (24 * EI);
+                }
+            } else {
+                if (x <= L1) {
+                   
+                    delta = ((w * x ** 2) / (24 * EI)) * (6 * L1 ** 2 - 4 * L1 * x + x ** 2) - (R1 * x ** 3) / (6 * EI);
+                } else if (x <= L1 + L2) {
+                    const x2 = x - L1;
+                    delta = (w * L1 ** 3) / (6 * EI) - (R1 * L1 ** 2) / (2 * EI) + (R2 * x2 ** 3) / (6 * EI) - (w * x2 ** 4) / (24 * EI);
+                }
             }
-          
-            return { x, y: deflection };
-          };
-          
-      }
+    
+            return { x: x, y: delta * 1000 * j2 };
+        };
+    }
       
     getShearForceEquation(beam, load) {
         const L1 = beam.primarySpan;
