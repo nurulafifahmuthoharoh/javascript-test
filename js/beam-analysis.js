@@ -170,7 +170,6 @@ BeamAnalysis.analyzer.twoSpanUnequal = class {
         return { M1, R1, R2, R3 };
     }
     
-
     getBendingMomentEquation(beam, load) {
         const L1 = beam.primarySpan;
         const L2 = beam.secondarySpan;
@@ -183,16 +182,19 @@ BeamAnalysis.analyzer.twoSpanUnequal = class {
     
         return function (x) {
             if (x === 0 || x === totalLength) {
-                return { x, y: 0 };
-            } else if (x > 0 && x < L1) {
-                return { x, y: -1 * (R1 * x - (load * Math.pow(x, 2)) / 2) }; 
-            } else if (x === L1) {
+                return { x, y: 0 }; 
+            } 
+            else if (x > 0 && x < L1) {
+                return { x, y: R1 * x - (load * Math.pow(x, 2)) / 2 };  
+            } 
+            else if (x === L1) {
                 return [
-                    { x, y: -1 * (R1 * L1 - (load * Math.pow(L1, 2)) / 2) }, 
-                    { x, y: -1 * (R1 * L1 + R2 * (x - L1) - (load * Math.pow(L1, 2)) / 2) },
+                    { x, y: R1 * L1 - (load * Math.pow(L1, 2)) / 2 }, 
+                    { x, y: R1 * L1 + R2 * (x - L1) - (load * Math.pow(L1, 2)) / 2 },
                 ];
-            } else if (x > L1 && x < totalLength) {
-                return { x, y: -1 * (R1 * x + R2 * (x - L1) - (load * Math.pow(x, 2)) / 2) }; 
+            }
+            else if (x > L1 && x < totalLength) {
+                return { x, y: R1 * x + R2 * (x - L1) - (load * Math.pow(x, 2)) / 2 };  // Tidak ada tanda negatif
             }
         };
     }
