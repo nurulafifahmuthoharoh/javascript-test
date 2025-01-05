@@ -23,7 +23,11 @@ class AnalysisPlotter {
         }
     
         const points = [];
-        xValues.forEach((x) => {
+        
+        const step = 0.5;
+        const maxX = data.beam.secondarySpan > 0 ? data.beam.primarySpan + data.beam.secondarySpan : data.beam.primarySpan;
+        
+        for (let x = 0; x <= maxX; x += step) {
             try {
                 const result = data.equation(x);
                 console.log(`x=${x}, result=`, result);
@@ -38,7 +42,7 @@ class AnalysisPlotter {
             } catch (error) {
                 console.error(`Error processing x=${x}:`, error.message);
             }
-        });
+        }
     
         console.log('All Points:', points);
     
@@ -97,5 +101,4 @@ class AnalysisPlotter {
             },
         });
     }
-    
 }
